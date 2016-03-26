@@ -1,0 +1,24 @@
+//////////////////////// A3, PartA - Design Doc \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+Steven Rau
+scr108
+11115094
+
+///////////////////////////////////////////////////////////////////////////
+// Terminology
+//////////////////////////////////////////////////////////////////////////
+
+Throughout the code, I use the following terms in comments variables to be able to distinguish between the single base station node and the 10 other nodes that move and send data packets:
+
+- "base node" -> The single base station node that remains stationary and only receives data
+- "sensor node" -> One of the 10 nodes that moves and sends data packets
+- "node" -> Any of the 10 sensor nodes or the base station node
+- "node ID" -> An integer ID from 0-10 that identifies the node (0 for base node, 1-10 for the sensor nodes)
+- "node name" > A three character string of the form "N00", "N01", ..., "N10" to give each node a unique name.
+
+
+///////////////////////////////////////////////////////////////////////////
+// Implementation details
+//////////////////////////////////////////////////////////////////////////
+
+- I chose to have the processes communicate via TCP. The port numbers that each of the nodes uses are hard coded in sensorNetwork.c/h. Also the local hostname is grabbed in sensorNetwork.c and then shared as an extern variable since all node processes will be communicating on the same host IP (local host).
