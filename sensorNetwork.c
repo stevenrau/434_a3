@@ -84,7 +84,6 @@ int main(int argc, char **argv)
     uint32_t R;
     uint16_t P;
     int8_t N;
-    char node_id[5];
     int i = 0;
     int pid = 1;
     

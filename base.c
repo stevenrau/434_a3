@@ -23,6 +23,7 @@
 #include "sensorNetwork.h"
 #include "base.h"
 #include "node.h"
+#include "connection.h"
 
 /*-----------------------------------------------------------------------------
  * File-scope constants & globals
@@ -35,14 +36,18 @@ uint32_t R;
 uint16_t P;
 int8_t N;
 
+
+/*-----------------------------------------------------------------------------
+ * Helper functions
+ * --------------------------------------------------------------------------*/
+
+
 /*-----------------------------------------------------------------------------
  *
  * --------------------------------------------------------------------------*/
 
 void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
-{
-    printf("%s\n", NODE_NAME[BASE_ID]);
-    printf("Hostname: %s\n", HOSTNAME);
+{   
     
     /* Save the global operation parameters */
     K = k;
@@ -50,6 +55,26 @@ void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
     R = r;
     P = p;
     N = n;
+    
+    /* Setup this node's tcp connection */
+    if (!setup_this_tcp_conn(BASE_ID))
+    {
+        fprintf(stderr, "Node %u failed to setup own TCP connection\n", BASE_ID);
+        
+        return;
+    }
+    
+    /* Then get the TCP connection info for each of the other nodes */
+    if (!setup_peer_tcp_conns(BASE_ID))
+    {
+        fprintf(stderr, "Node %u failed to setup TCP connections with other nodes\n", BASE_ID);
+        
+        return;
+    }
+    
+    
+    while(1);
+    
 }
 
 
