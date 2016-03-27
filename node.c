@@ -44,14 +44,19 @@ uint8_t ID;
 /* This node's state information */
 struct node_state my_state;
 
+/* This node's data packet */
+struct data_packet my_data;
+
 
 /*-----------------------------------------------------------------------------
  * Helper functions
  * --------------------------------------------------------------------------*/
 
-void init_node_state_info()
+void init_node_state()
 {
-    /* First, randomize the x and y coords */
+    my_state.id = ID;
+    
+    /* Randomize the x and y coords */
     srand(ID);  /* Seed the generator with node ID to ensure unique values */
     my_state.x_pos = rand() % (REGION_X_MAX + 1);
     my_state.y_pos = rand() % (REGION_Y_MAX + 1);
@@ -59,6 +64,12 @@ void init_node_state_info()
     /* Zero out the has_data array and mark that we have data for this node */
     memset(my_state.has_data, 0, sizeof(bool) * NUM_TOTAL_NODES);
     my_state.has_data[ID] = true;
+}
+
+void init_node_data()
+{
+    strcpy(my_data.name, NODE_NAME[ID]);
+    strcpy(my_data.text, "This is node data");
 }
 
 void move_node()
@@ -134,6 +145,7 @@ void move_node()
 void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
 {   
     int num_turns = 0;
+    int peer_id;
     
     /* Save the global operation parameters */
     ID = id;
@@ -142,7 +154,7 @@ void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, 
     R = r;
     P = p;
     N = n;
-    
+
     /* Setup this node's tcp connection */
     if (!setup_this_tcp_conn(id))
     {
@@ -163,13 +175,18 @@ void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, 
         return;
     }
     
-    /* Initialize the state information */
-    init_node_state_info();
+    /* Initialize the state information and data packet*/
+    init_node_state();
+    init_node_data();
     
     printf("Node %i ready to go\n", id);
     
     for (num_turns = 0; num_turns < K; num_turns++)
     {
+        if (id == 1)
+        {
+            printf("Turn %i\n", num_turns);
+        }
         /* First, move in a random direction */
         move_node();
         
@@ -179,6 +196,21 @@ void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, 
             fprintf(stderr, "Node %u failed to send state info to other nodes\n", id);
         
             return;
+        }
+        
+        /* Handle state messages from each of the other nodes */
+        for (peer_id = 0; peer_id < NUM_TOTAL_NODES; peer_id++)
+        {
+            /* Only try to get messages from nodes other than yourself */
+            if (peer_id != ID)
+            {
+                if (!handle_msg(id, peer_id, my_state, D))
+                {
+                    fprintf(stderr, "Node %u failed to handle message\n", id);
+            
+                    return;
+                }
+            }
         }
         
         /* Give the other processes time to catch up */

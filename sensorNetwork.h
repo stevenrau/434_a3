@@ -49,6 +49,7 @@ typedef enum {STATE, DATA} msg_type;
 struct msg_header
 {
     msg_type type;
+    uint8_t id;
     uint32_t msg_size;
     void *msg; /* Holds either a data_packet or node_state message */
 };
@@ -63,6 +64,7 @@ struct data_packet
 /* Each node first passes it's current state to all other nodes */
 struct node_state
 {
+    uint8_t id;
     uint16_t x_pos;
     uint16_t y_pos;
     bool has_data[NUM_TOTAL_NODES];  /* True if this node has the data for node indexed by ID */

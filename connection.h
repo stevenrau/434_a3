@@ -36,5 +36,7 @@ bool setup_this_tcp_conn(uint8_t id);
 
 bool send_node_state(uint8_t id, struct node_state state);
 
+bool handle_msg(uint8_t my_id, uint8_t peer_id, struct node_state state, uint16_t D);
+
 
 #endif  /* __CONNECTION_H */

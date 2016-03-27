@@ -44,8 +44,10 @@ struct node_state my_state;
  * Helper functions
  * --------------------------------------------------------------------------*/
 
-void init_base_state_info()
+void init_base_state()
 {
+    my_state.id = BASE_ID;
+    
     /* Set the x and y coords */
     my_state.x_pos = BASE_POS_X;
     my_state.y_pos = BASE_POS_Y;
@@ -87,7 +89,7 @@ void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
     }
     
     /* Initialize the state information */
-    init_base_state_info();
+    init_base_state();
     
     printf("Node %i ready to go\n", BASE_ID);
     
@@ -105,6 +107,8 @@ void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
         /* Give the other processes time to catch up */
         sleep(1);
     }
+    
+    while(1);
 }
 
 
