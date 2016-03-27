@@ -36,11 +36,24 @@ uint32_t R;
 uint16_t P;
 int8_t N;
 
+/* The base node's state information */
+struct node_state my_state;
+
 
 /*-----------------------------------------------------------------------------
  * Helper functions
  * --------------------------------------------------------------------------*/
 
+void init_base_state_info()
+{
+    /* Set the x and y coords */
+    my_state.x_pos = BASE_POS_X;
+    my_state.y_pos = BASE_POS_Y;
+    
+    /* Zero out the has_data array and mark that we have data for this node */
+    memset(my_state.has_data, 0, sizeof(bool) * NUM_TOTAL_NODES);
+    my_state.has_data[BASE_ID] = true;
+}
 
 /*-----------------------------------------------------------------------------
  *
@@ -48,6 +61,7 @@ int8_t N;
 
 void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
 {   
+    int num_turns = 0;
     
     /* Save the global operation parameters */
     K = k;
@@ -72,9 +86,25 @@ void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
         return;
     }
     
+    /* Initialize the state information */
+    init_base_state_info();
     
-    while(1);
+    printf("Node %i ready to go\n", BASE_ID);
     
+    
+    for (num_turns = 0; num_turns < K; num_turns++)
+    {
+        /* Send your state to all other sensor nodes */
+        if (!send_node_state(BASE_ID, my_state))
+        {
+            fprintf(stderr, "Node %u failed to send state info to other nodes\n", BASE_ID);
+        
+            return;
+        }
+        
+        /* Give the other processes time to catch up */
+        sleep(1);
+    }
 }
 
 

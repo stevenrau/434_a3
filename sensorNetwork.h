@@ -11,9 +11,11 @@
 #define __SENSOR_NETWORK_H
 
 #include <stdint.h>
+#include <stdbool.h>
+#include <math.h>
 
 /*-----------------------------------------------------------------------------
- * Constants and type defs
+ * Constants
  * --------------------------------------------------------------------------*/
 
 /* Number of nodes that get forked */
@@ -37,6 +39,20 @@ extern const char* NODE_PORT[];
 
 extern char HOSTNAME[256];
 
+/*-----------------------------------------------------------------------------
+ * Data types
+ * --------------------------------------------------------------------------*/
+
+/* There are two types of messages, node state, and node data */
+typedef enum {STATE, DATA} msg_type;
+
+struct msg_header
+{
+    msg_type type;
+    uint32_t msg_size;
+    void *msg; /* Holds either a data_packet or node_state message */
+};
+
 /* The data packet sent by the nodes. Contains the node name and a short text string */
 struct data_packet
 {
@@ -50,7 +66,13 @@ struct node_state
     uint16_t x_pos;
     uint16_t y_pos;
     bool has_data[NUM_TOTAL_NODES];  /* True if this node has the data for node indexed by ID */
-}
+};
+
+/*-----------------------------------------------------------------------------
+ * Function headers
+ * --------------------------------------------------------------------------*/
+
+bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t D);
                            
                            
 #endif  /* __SENSOR_NETWORK_H */

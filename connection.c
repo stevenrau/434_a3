@@ -180,3 +180,51 @@ bool setup_this_tcp_conn(uint8_t id)
     
     return true;
 }
+
+
+/**
+ * Sends the node's state information to all other sensor nodes
+ * 
+ * *NOTE This does not include the base station since the only needs to receive
+ *       data packets, not send them, therefore it doesnt need to know about other
+ *       node's states
+ */
+bool send_node_state(uint8_t id, struct node_state state)
+{
+    int i;
+    int num_bytes_written;
+    struct msg_header out;
+    uint32_t state_size;
+    
+    state_size = sizeof(state);
+    
+    out.type = STATE;
+    out.msg_size = state_size;
+    
+    /* Allocate space in the header for the state message */
+    out.msg = calloc(1, state_size);
+    memcpy(out.msg, &state, state_size);
+    
+    /* Start at 1 since we don't worry about sending to the base */
+    for (i = 1; i < NUM_TOTAL_NODES; i++)
+    {
+        if (i != id)
+        {
+            /* Then write it to the receiver's file descriptor */
+            num_bytes_written = write(sock_fd[i], &out, sizeof(out));
+            if (num_bytes_written == -1)
+            {   
+                fprintf(stderr, "Node %i ERROR writing to receiver %i socket\n", id, i);
+                
+                return false;
+            }
+            
+            if (id == 1)
+            {
+                printf("Sending state to %i\n", i);
+            }
+        }
+    }
+    
+    return true;
+}

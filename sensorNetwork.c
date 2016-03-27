@@ -58,6 +58,33 @@ char HOSTNAME[256];
  * Helper Functions
  * --------------------------------------------------------------------------*/
 
+/**
+ * Tests to see if to nodes (represented by x1, y1 and x2, y2) are withing distance
+ * D of each other.
+ * 
+ * Use Euclidean distance.
+ * 
+ * Returns tru if they are within D distance, false otherwise.
+ */
+bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t D)
+{
+    float x_diff;
+    float y_diff;
+    float dist;
+    
+    x_diff = (float)x2 - (float)x1;
+    y_diff = (float)y2 - (float)y1;
+    
+    dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+    
+    if (dist > (float)D)
+    {
+        return false;
+    }
+    
+    return true;
+}
+
 
 /*-----------------------------------------------------------------------------
  *

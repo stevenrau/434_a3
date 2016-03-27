@@ -22,3 +22,4 @@ Throughout the code, I use the following terms in comments variables to be able 
 //////////////////////////////////////////////////////////////////////////
 
 - I chose to have the processes communicate via TCP. The port numbers that each of the nodes uses are hard coded in sensorNetwork.c/h. Also the local hostname is grabbed in sensorNetwork.c and then shared as an extern variable since all node processes will be communicating on the same host IP (local host).
+- Once the 10 sensor node processes are forked and the parent process continues as the base station node, the first thing I do is set up TCP connections between each node and all others. Once connections are established, each node stores the socket file descriptors for the other nodes so that it can easily communicate with them in the future.

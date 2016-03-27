@@ -17,7 +17,7 @@
  * --------------------------------------------------------------------------*/
 
 /* The base station always has the node ID 0 */
-#define BASE_ID     0
+#define BASE_ID  0
 
 /* The base station remains in the same place */
 #define BASE_POS_X  500

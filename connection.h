@@ -1,5 +1,5 @@
 /**
- * Shared functions for setting up TCP connections
+ * Shared functions for handling TCP connections
  * 
  * CMPT 434 - A3
  * Steven Rau
@@ -33,6 +33,8 @@ extern int sock_fd[NUM_TOTAL_NODES];
 bool setup_peer_tcp_conns(uint8_t id);
 
 bool setup_this_tcp_conn(uint8_t id);
+
+bool send_node_state(uint8_t id, struct node_state state);
 
 
 #endif  /* __CONNECTION_H */
