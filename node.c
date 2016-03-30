@@ -31,13 +31,6 @@
  * File-scope constants & globals
  * --------------------------------------------------------------------------*/
 
-/* Each node needs to keep track of the command line params that were sent in */
-uint16_t K;
-uint16_t D;
-uint32_t R;
-uint16_t P;
-int8_t N;
-
 /* Each node also has a unique id */
 uint8_t ID;
 
@@ -46,6 +39,18 @@ struct node_state my_state;
 
 /* This node's data packet */
 struct data_packet my_data;
+
+/* Start the extern variable tracking number of packets sent to 0 */
+uint16_t packs_sent = 0;
+
+/* Extern bool array tracking which nodes we have sent data to */
+bool data_sent[NUM_TOTAL_NODES];
+
+/* Extern data packet buffer to hold any data buffered and ready to send to base station */
+struct data_packet data_buffer[NUM_TOTAL_NODES];
+
+/* Extern count of the number of data packets we currently have buffered */
+uint8_t num_buffered = 0;
 
 
 /*-----------------------------------------------------------------------------
@@ -61,15 +66,19 @@ void init_node_state()
     my_state.x_pos = rand() % (REGION_X_MAX + 1);
     my_state.y_pos = rand() % (REGION_Y_MAX + 1);
     
-    /* Zero out the has_data array and mark that we have data for this node */
-    memset(my_state.has_data, 0, sizeof(bool) * NUM_TOTAL_NODES);
-    my_state.has_data[ID] = true;
+    /* Zero out the data_sent array and mark that we have data for this node */
+    memset(data_sent, 0, sizeof(bool) * NUM_TOTAL_NODES);
+    data_sent[ID] = true;
 }
 
 void init_node_data()
 {
     strcpy(my_data.name, NODE_NAME[ID]);
-    strcpy(my_data.text, "This is node data");
+    snprintf(my_data.text, MAX_DATA_TEXT_LEN, "This is node %i's data", ID);
+    
+    /* Buffer this data packet */
+    data_buffer[0] = my_data;
+    num_buffered++;
 }
 
 void move_node()
@@ -142,18 +151,13 @@ void move_node()
  * Main sensor node starup function that gets called directly after the new sensor node
  * process is forked
  */
-void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
+void run_sensor_node(uint8_t id)
 {   
     int num_turns = 0;
     int peer_id;
     
-    /* Save the global operation parameters */
+    /* Save the node ID */
     ID = id;
-    K = k;
-    D = d;
-    R = r;
-    P = p;
-    N = n;
 
     /* Setup this node's tcp connection */
     if (!setup_this_tcp_conn(id))
@@ -183,10 +187,12 @@ void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, 
     
     for (num_turns = 0; num_turns < K; num_turns++)
     {
-        if (id == 1)
+        /* Print debug info */
+        if (id == N)
         {
-            printf("Turn %i\n", num_turns);
+            printf("DEBUG: Turn %i\n", num_turns);
         }
+        
         /* First, move in a random direction */
         move_node();
         
@@ -204,7 +210,7 @@ void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, 
             /* Only try to get messages from nodes other than yourself */
             if (peer_id != ID)
             {
-                if (!handle_msg(id, peer_id, my_state, D))
+                if (!node_handle_msg(id, peer_id, my_state, D))
                 {
                     fprintf(stderr, "Node %u failed to handle message\n", id);
             
@@ -216,4 +222,6 @@ void run_sensor_node(uint8_t id,uint16_t k, uint16_t d, uint32_t r, uint16_t p, 
         /* Give the other processes time to catch up */
         sleep(1);
     }
+    
+    close_connections();
 }

@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 
+#include "sensorNetwork.h"
+
 /*-----------------------------------------------------------------------------
  * Constants and type defs
  * --------------------------------------------------------------------------*/
@@ -23,11 +25,17 @@
 #define BASE_POS_X  500
 #define BASE_POS_Y  500
 
+/* Define an array to hold recieved data packets large enough to potentially hold all node data */
+extern struct data_packet data_recvd[NUM_TOTAL_NODES];
+
+/* Number of data packets we currently have received */
+extern uint8_t num_recvd;
+
 
 /*-----------------------------------------------------------------------------
  * Function headers
  * --------------------------------------------------------------------------*/
 
-void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n);
+void run_base(void);
 
 #endif  /* __BASE_H */

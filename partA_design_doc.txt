@@ -22,4 +22,17 @@ Throughout the code, I use the following terms in comments variables to be able 
 //////////////////////////////////////////////////////////////////////////
 
 - I chose to have the processes communicate via TCP. The port numbers that each of the nodes uses are hard coded in sensorNetwork.c/h. Also the local hostname is grabbed in sensorNetwork.c and then shared as an extern variable since all node processes will be communicating on the same host IP (local host).
+
 - Once the 10 sensor node processes are forked and the parent process continues as the base station node, the first thing I do is set up TCP connections between each node and all others. Once connections are established, each node stores the socket file descriptors for the other nodes so that it can easily communicate with them in the future.
+
+-All of the command line variables, K, D, R, P, and N, are stored as extern vaiables and shared globally in sensorNetwork.c/h. This is to make it easier to share these variables between files without hving to continually pass them along as function parameters.
+
+-For the initial node state message that gets sent at the start of each turn, I chose to use a struct named node_state, defined in sensorNetwork.h. I chose to contain the node ID for easy sender identification, and x and y positions to determine position in the coordinate system.
+
+-The data packet is of struct type data_packet and contains, as per assignment spec, the node name and some arbitrary text (which I chose to be a max of 64 chars and say "This is node (id)'s data").
+
+-Each node has an array of booleans, called data_sent to keep track of which nodes we have already sent to. Each node only needs to send to each node within range once since they will either still have your data buffered from the first send, or they have already trasmitted your data to the base station.
+
+-For simplicity's sake and lake of time to implement a more elegant solution, I chose to send data packets to a node within range as long as you have not already sent them your data and you still have enough packet transmissions left to potentially send all of the buffered data packets to the base station ((P - packs_sent) >= num_packs_buffered)
+
+-Distances are measures using Euclidena distance: dist = sqrt((x2 - x1)^2 + (y2 - y1)^2)

@@ -29,15 +29,14 @@
  * File-scope constants & globals
  * --------------------------------------------------------------------------*/
 
-/* The base node needs to keep track of the command line params that were sent in */
-uint16_t K;
-uint16_t D;
-uint32_t R;
-uint16_t P;
-int8_t N;
-
 /* The base node's state information */
 struct node_state my_state;
+
+/* Extern data packet array to hold any data pakets we receive from nodes */
+struct data_packet data_recvd[NUM_TOTAL_NODES];
+
+/* Extern count of the number of data packets we currently have received */
+uint8_t num_recvd = 0;
 
 
 /*-----------------------------------------------------------------------------
@@ -51,26 +50,17 @@ void init_base_state()
     /* Set the x and y coords */
     my_state.x_pos = BASE_POS_X;
     my_state.y_pos = BASE_POS_Y;
-    
-    /* Zero out the has_data array and mark that we have data for this node */
-    memset(my_state.has_data, 0, sizeof(bool) * NUM_TOTAL_NODES);
-    my_state.has_data[BASE_ID] = true;
 }
 
 /*-----------------------------------------------------------------------------
  *
  * --------------------------------------------------------------------------*/
 
-void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
+void run_base()
 {   
+    int peer_id;
+    int i;
     int num_turns = 0;
-    
-    /* Save the global operation parameters */
-    K = k;
-    D = d;
-    R = r;
-    P = p;
-    N = n;
     
     /* Setup this node's tcp connection */
     if (!setup_this_tcp_conn(BASE_ID))
@@ -96,6 +86,13 @@ void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
     
     for (num_turns = 0; num_turns < K; num_turns++)
     {
+        /* Print debug info */
+        if (BASE_ID == N)
+        {
+            printf("DEBUG: Turn %i\n", num_turns);
+            printf("\tX coord: %u  Y coord: %u\n", my_state.x_pos, my_state.y_pos);
+        }
+        
         /* Send your state to all other sensor nodes */
         if (!send_node_state(BASE_ID, my_state))
         {
@@ -104,11 +101,37 @@ void run_base(uint16_t k, uint16_t d, uint32_t r, uint16_t p, int8_t n)
             return;
         }
         
+        /* Handle state messages from each of the other nodes */
+        for (peer_id = 0; peer_id < NUM_TOTAL_NODES; peer_id++)
+        {
+            /* Only try to get messages from nodes other than yourself */
+            if (peer_id != BASE_ID)
+            {
+                if (!base_handle_msg(peer_id, my_state))
+                {
+                    fprintf(stderr, "Node %u failed to handle message\n", BASE_ID);
+            
+                    return;
+                }
+            }
+        }
+        
         /* Give the other processes time to catch up */
-        sleep(1);
+        sleep(2);
     }
     
-    while(1);
+    close_connections();
+    
+    printf("\nComplete!\n"
+           "The base station received %u data packets\n", num_recvd);
+    
+    for (i = 0; i < num_recvd; i++)
+    {
+        printf("\t%s: %s\n", data_recvd[i].name, data_recvd[i].text);
+    }
+    
+    printf("\nPress ctrl + c to exit the program (otherwise children will loop forever)\n");
+
 }
 
 

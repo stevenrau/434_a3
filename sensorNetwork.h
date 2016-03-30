@@ -39,6 +39,13 @@ extern const char* NODE_PORT[];
 
 extern char HOSTNAME[256];
 
+/* Variables holding the comamnd line variables passed in. They need to be globally visible */
+extern uint16_t K;
+extern uint16_t D;
+extern uint32_t R;
+extern uint16_t P;
+extern int8_t N;
+
 /*-----------------------------------------------------------------------------
  * Data types
  * --------------------------------------------------------------------------*/
@@ -55,10 +62,11 @@ struct msg_header
 };
 
 /* The data packet sent by the nodes. Contains the node name and a short text string */
+#define MAX_DATA_TEXT_LEN  64
 struct data_packet
 {
     char name[4];
-    char text[64];
+    char text[MAX_DATA_TEXT_LEN];
 };
 
 /* Each node first passes it's current state to all other nodes */
@@ -67,14 +75,16 @@ struct node_state
     uint8_t id;
     uint16_t x_pos;
     uint16_t y_pos;
-    bool has_data[NUM_TOTAL_NODES];  /* True if this node has the data for node indexed by ID */
 };
+
+/* Define a new type that will be sent as the message indicating how many incoming data packets to expect */
+typedef uint8_t num_incoming_data;
 
 /*-----------------------------------------------------------------------------
  * Function headers
  * --------------------------------------------------------------------------*/
 
-bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t D);
+bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
                            
                            
 #endif  /* __SENSOR_NETWORK_H */

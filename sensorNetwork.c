@@ -54,19 +54,26 @@ const char *NODE_PORT[] = { "35000",
  * (extern def in sensorNetwork.h) */                           
 char HOSTNAME[256];
 
+/* extern variable holding command line params sent in. They get set here. */
+uint16_t K;
+uint16_t D;
+uint32_t R;
+uint16_t P;
+int8_t N;
+
 /*-----------------------------------------------------------------------------
  * Helper Functions
  * --------------------------------------------------------------------------*/
 
 /**
  * Tests to see if to nodes (represented by x1, y1 and x2, y2) are withing distance
- * D of each other.
+ * R of each other.
  * 
  * Use Euclidean distance.
  * 
- * Returns tru if they are within D distance, false otherwise.
+ * Returns true if they are within R distance, false otherwise.
  */
-bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t D)
+bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
     float x_diff;
     float y_diff;
@@ -77,7 +84,7 @@ bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t 
     
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
     
-    if (dist > (float)D)
+    if (dist > (float)R)
     {
         return false;
     }
@@ -106,18 +113,19 @@ bool test_distance(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t 
  */
 int main(int argc, char **argv)
 {
-    uint16_t K;
-    uint16_t D;
-    uint32_t R;
-    uint16_t P;
-    int8_t N;
     int i = 0;
     int pid = 1;
     
     /* Get the server host and port from the command line */
     if (argc < 6)
     {
-        fprintf(stderr, "Usage: %s <K> <D> <R> <P> <N>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <K> <D> <R> <P> <N>\n"
+                        "\tK - number of simulated time steps\n"
+                        "\tD - distance moved during each time step\n"
+                        "\tR - transmission range\n"
+                        "\tP - max number of data packet transmissions\n"
+                        "\tN - 0-10 chooses a node to print debug info, -1 to ignore\n", 
+                        argv[0]);
         
         exit(1);
     }
@@ -165,12 +173,12 @@ int main(int argc, char **argv)
     /* If we are the parent (have pid of child process), run the base station code */
     if (pid != 0)
     {
-        run_base(K, D, R, P, N);
+        run_base();
     }
     /* Otherwise we are a child process (pid equals 0), so run the sensor node code */
     else
     {
-        run_sensor_node(i, K, D, R, P, N);
+        run_sensor_node(i);
     }
     
     return 0;
