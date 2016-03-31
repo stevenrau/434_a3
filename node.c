@@ -183,8 +183,6 @@ void run_sensor_node(uint8_t id)
     init_node_state();
     init_node_data();
     
-    printf("Node %i ready to go\n", id);
-    
     for (num_turns = 0; num_turns < K; num_turns++)
     {
         /* Print debug info */
@@ -200,6 +198,8 @@ void run_sensor_node(uint8_t id)
         if (!send_node_state(ID, my_state))
         {
             fprintf(stderr, "Node %u failed to send state info to other nodes\n", id);
+            
+            close_connections();
         
             return;
         }
@@ -213,6 +213,8 @@ void run_sensor_node(uint8_t id)
                 if (!node_handle_msg(id, peer_id, my_state, D))
                 {
                     fprintf(stderr, "Node %u failed to handle message\n", id);
+                    
+                    close_connections();
             
                     return;
                 }

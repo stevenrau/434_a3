@@ -10,7 +10,7 @@ The necessary executable is built by running 'make'
 Known Issues
 -------------
 
-The program does not exit by itself and instead requires that the user press CTRL + c once the results are printed. This is because I was running into issues where certain processes would finish early, thus killing their connection with the others. To solve this, each process does an infinite while loop, while(1), once all necessary computations are complete.
+- Nodes that are within range of each other only send their OWN data packet to the neighbouring node instead of potentially their entire buffer. However, a node still trasnmits its entire buffer to the base station when in range.
 
 -----------
 How to run
@@ -32,5 +32,7 @@ Things to note
 
 -When N is provided between 0-10, I chose to print more debug info than was requested in the assignment spec, mostly for my own debugging suring implementation. The infor I print is:
   -> The current turn number
-  -> Whenever in range of another node, print which node ou are within range of
-  -> Whether or not you have already sent the other node your data.
+  -> Whenever in range of another node, print which node you are within range of
+  -> The contents of any packets sent
+  -> the contents of any packets received
+  -> An indication of cases where no data is sent (due to having no packets buffered, cannot afford to send, or have already send to the peer node within range)

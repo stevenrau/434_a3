@@ -33,6 +33,6 @@ Throughout the code, I use the following terms in comments variables to be able 
 
 -Each node has an array of booleans, called data_sent to keep track of which nodes we have already sent to. Each node only needs to send to each node within range once since they will either still have your data buffered from the first send, or they have already trasmitted your data to the base station.
 
--For simplicity's sake and lake of time to implement a more elegant solution, I chose to send data packets to a node within range as long as you have not already sent them your data and you still have enough packet transmissions left to potentially send all of the buffered data packets to the base station ((P - packs_sent) >= num_packs_buffered)
+-For simplicity's sake and lake of time to implement a more elegant solution, I chose to send data packets to a node within range as long as you have not already sent them your data and you still have enough packet transmissions left to potentially send all of the buffered data packets to the base station ((P - packs_sent) >= num_packs_buffered). Also, a node will only ver send its own data to a node in range, which is a known fault.
 
 -Distances are measures using Euclidena distance: dist = sqrt((x2 - x1)^2 + (y2 - y1)^2)

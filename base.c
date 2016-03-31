@@ -81,9 +81,6 @@ void run_base()
     /* Initialize the state information */
     init_base_state();
     
-    printf("Node %i ready to go\n", BASE_ID);
-    
-    
     for (num_turns = 0; num_turns < K; num_turns++)
     {
         /* Print debug info */
@@ -97,6 +94,8 @@ void run_base()
         if (!send_node_state(BASE_ID, my_state))
         {
             fprintf(stderr, "Node %u failed to send state info to other nodes\n", BASE_ID);
+            
+            close_connections();
         
             return;
         }
@@ -110,6 +109,8 @@ void run_base()
                 if (!base_handle_msg(peer_id, my_state))
                 {
                     fprintf(stderr, "Node %u failed to handle message\n", BASE_ID);
+                    
+                    close_connections();
             
                     return;
                 }
@@ -129,8 +130,7 @@ void run_base()
     {
         printf("\t%s: %s\n", data_recvd[i].name, data_recvd[i].text);
     }
-    
-    printf("\nPress ctrl + c to exit the program (otherwise children will loop forever)\n");
+
 
 }
 

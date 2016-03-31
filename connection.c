@@ -101,9 +101,15 @@ bool base_handle_incoming_data(int peer_fd)
     
     if (num_bytes_read < 1) 
     {
-        fprintf(stderr, "Node %i ERROR reading from sender socket\n", BASE_ID);
+        fprintf(stderr, "Node %i ERROR reading num expected packets from sender socket\n", BASE_ID);
         
         return false;
+    }
+    
+    /* Print debug info */
+    if (BASE_ID == N)
+    {
+        printf("\t\tBase expecting %u data packets\n", num_expected);
     }
     
     for (i = 0; i < num_expected; i++)
@@ -113,19 +119,188 @@ bool base_handle_incoming_data(int peer_fd)
         
         if (num_bytes_read < 1) 
         {
-            fprintf(stderr, "Node %i ERROR reading from sender socket\n", BASE_ID);
+            fprintf(stderr, "Node %i ERROR reading data packet from sender socket\n", BASE_ID);
             
             return false;
         }
         
         add_data_to_base(in_data);
+        
+        /* Print debug info */
+        if (BASE_ID == N)
+        {
+            printf("\t\tBase received data packet from %s: %s\n", in_data.name, in_data.text);
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * handles a sensor node sending all of its buffered data to the base station
+ */
+bool node_send_data_to_base(uint8_t my_id)
+{
+    int i;
+    int num_bytes_written;
+    num_incoming_data num_sending = num_buffered;
+    
+    /* Print debug info if we have no buffered packets to send*/
+    if (my_id == N && num_buffered == 0)
+    {
+        printf("\t\tNode %u has no bufferd packets to send to base station\n", my_id);
+    }
+    
+    /* Send the number of buffered data packets that will be sent */
+    num_bytes_written = write(out_sock_fd[BASE_ID], &num_sending, sizeof(num_incoming_data));
+    if (num_bytes_written == -1)
+    {   
+        fprintf(stderr, "Node %i ERROR writing num expected packets to receiver %i socket\n", my_id, BASE_ID);
+                
+        return false;
+    }
+    
+    /* Send the data packets */
+    for (i = 0; i < num_sending; i++)
+    {
+        /* Print debug info */
+        if (my_id == N)
+        {
+            printf("\t\tNode %u sending to base %s: %s\n", my_id, data_buffer[i].name, data_buffer[i].text);
+        }
+        
+        num_bytes_written = write(out_sock_fd[BASE_ID], &data_buffer[i], sizeof(struct data_packet));
+        if (num_bytes_written == -1)
+        {   
+            fprintf(stderr, "Node %i ERROR writing data packet to receiver %i socket\n", my_id, BASE_ID);
+                    
+            return false;
+        }
+    }
+    
+    /* Wipe out the buffer */
+    memset(data_buffer, 0, sizeof(struct data_packet) * NUM_TOTAL_NODES);
+    
+    num_buffered = 0;
+    
+    return true;
+}
+
+/** 
+ * Handles a sensor node sending it's data packet to a peer node
+ */
+bool node_send_my_data(uint8_t my_id, uint8_t peer_id)
+{
+    int num_bytes_written;
+    num_incoming_data num_sending = 1;
+    
+    /* Send the number of buffered data packets that will be sent (in this case 1)*/
+    num_bytes_written = write(out_sock_fd[peer_id], &num_sending, sizeof(num_incoming_data));
+    if (num_bytes_written == -1)
+    {   
+        fprintf(stderr, "Node %i ERROR writing num expected packets to receiver %i socket\n", my_id, peer_id);
+                
+        return false;
+    }
+    
+    /* Print debug info */
+    if (my_id == N)
+    {
+        printf("\t\tNode %u sending to node %u packet %s: %s\n", my_id, peer_id, 
+                                                               my_data.name, my_data.text);
+    }
+    
+    /* Send the data packet */
+    num_bytes_written = write(out_sock_fd[peer_id], &my_data, sizeof(struct data_packet));
+    if (num_bytes_written == -1)
+    {   
+        fprintf(stderr, "Node %i ERROR writing data packet to receiver %i socket\n", my_id, peer_id);
+                    
+        return false;
+    }
+    
+    /* Mark that we sent to this peer node */
+    data_sent[peer_id] = true;
+    
+    return true;
+}
+
+/**
+ * Notifies the peer node that no data will be sent
+ */
+bool node_notify_no_data(uint8_t my_id, uint8_t peer_id)
+{
+    int num_bytes_written;
+    num_incoming_data num_sending = 0;
+    
+    /* Send the number of buffered data packets that will be sent (in this case 0)*/
+    num_bytes_written = write(out_sock_fd[peer_id], &num_sending, sizeof(num_incoming_data));
+    if (num_bytes_written == -1)
+    {   
+        fprintf(stderr, "Node %i ERROR writing num expected packets to receiver %i socket\n", my_id, peer_id);
+                
+        return false;
+    }
+    
+    /* Print debug info */
+    if (my_id == N)
+    {
+        printf("\t\tNode %u sending no data to node %u (cannot afford or already sent)\n", my_id, peer_id);
+    }
+    
+    return true;
+}
+
+/**
+ * Handles any incoming data to this node
+ */
+bool node_handle_incoming_data(uint8_t my_id, uint8_t peer_id)
+{
+    int i;
+    int num_bytes_read;
+    num_incoming_data num_expected;
+    struct data_packet in_data;
+    
+    /* Read in the incoming number of data packets to expect */
+    num_bytes_read = read(in_sock_fd[peer_id], &num_expected, sizeof(num_expected));
+    
+    if (num_bytes_read < 1) 
+    {
+        fprintf(stderr, "Node %i ERROR reading num expected packets from sender node %u\n", my_id, peer_id);
+        
+        return false;
+    }
+    
+    /* Get each expected data packet (even though each node should only send one with the
+     * current implementation) */
+    for (i = 0; i < num_expected; i++)
+    {
+        /* Read in the the expected data packet */
+        num_bytes_read = read(in_sock_fd[peer_id], &in_data, sizeof(struct data_packet));
+        
+        if (num_bytes_read < 1) 
+        {
+            fprintf(stderr, "Node %i ERROR reading data packet from sender node %u\n", my_id, peer_id);
+            
+            return false;
+        }
+        
+        /* Copy the data packet to our data buffer */
+        memcpy(&data_buffer[num_buffered], &in_data, sizeof(struct data_packet));
+        num_buffered++;
+        
+        /* Print debug info */
+        if (my_id == N)
+        {
+            printf("\t\tNode %u received data packet from %s: %s\n", my_id, in_data.name, in_data.text);
+        }
     }
     
     return true;
 }
 
 /*-----------------------------------------------------------------------------
- * Externally vidible functions
+ * Externally visible functions
  * --------------------------------------------------------------------------*/
 
 /**
@@ -363,9 +538,10 @@ bool base_handle_msg(uint8_t peer_id, struct node_state state)
     /* Check if the nodes are within the range R */
     if (test_distance(state.x_pos, state.y_pos, in_state.x_pos, in_state.y_pos))
     {
+        /* Print debug info */
         if (BASE_ID == N)
         {
-            printf("\tNode %i Within transmission distance of node %i\n", BASE_ID, in_state.id);
+            printf("\tNode %i within transmission distance of node %i\n", BASE_ID, in_state.id);
         }
         
         /* Handle any potential incoming data packets */
@@ -385,6 +561,7 @@ bool node_handle_msg(uint8_t my_id, uint8_t peer_id, struct node_state state)
     int peer_fd;
     int num_bytes_read;
     struct node_state in_state;
+    bool succ = true;
     
     /* Accept new connections as long as we haven't accepted from all peer nodes */
     if (num_accepted < NUM_SENSOR_NODES)
@@ -418,20 +595,20 @@ bool node_handle_msg(uint8_t my_id, uint8_t peer_id, struct node_state state)
     /* Set the FD for this peer node so that we know for future use */
     in_sock_fd[in_state.id] = peer_fd;
     
-    
     /* Check if the nodes are within the range R */
     if (test_distance(state.x_pos, state.y_pos, in_state.x_pos, in_state.y_pos))
     {
+        /* Print debug info */
         if (my_id == N)
         {
-            printf("\tNode %i Within transmission distance of node %i\n", my_id, in_state.id);
+            printf("\tNode %i within transmission distance of node %i\n", my_id, in_state.id);
         }
         
         /* If we are within range of the abse station, send all buffered data and continue.
            No need to wait since the base station will not be sending us anything */
         if (in_state.id == BASE_ID)
-        {
-            
+        {   
+            succ = node_send_data_to_base(my_id);
         }
         /* Else decide if we will send packet or not and recieve the other node's potential data */
         else
@@ -440,25 +617,40 @@ bool node_handle_msg(uint8_t my_id, uint8_t peer_id, struct node_state state)
             send your data */
             if (!data_sent[in_state.id] && can_afford_send())
             {
+                succ = node_send_my_data(my_id, in_state.id);
                 
             }
             /* Else notify that we won't be sending any data */
             else
             {
-                
+                succ = node_notify_no_data(my_id, in_state.id);
             }
             
-            /* Handle the peer node'es data (or lack of) */
+            /* Handle the peer node's data (or lack of) */
+            succ = node_handle_incoming_data(my_id, in_state.id);
         }
     }
     
-    return true;
+    return succ;
 }
 
 /**
  * Closes connections with all open file descriptors
  */
-void close_connections()
+void close_connections(uint8_t my_id)
 {
+    int i;
     
+    for (i = 0; i < NUM_TOTAL_NODES; i++)
+    {
+        if (i == my_id)
+        {
+            close(out_sock_fd[my_id]);
+        }
+        else
+        {
+            close(out_sock_fd[my_id]);
+            close(in_sock_fd[my_id]);
+        }
+    }
 }

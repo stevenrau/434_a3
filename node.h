@@ -19,6 +19,9 @@
  * Constants and type defs
  * --------------------------------------------------------------------------*/
 
+/* This node's data packet */
+extern struct data_packet my_data;
+
 /* Keeps track of which nodes you have sent your data packet to. Only need to send to each once, 
  * since they will either stil have your data buffered or have already transmitted to the base */
 extern bool data_sent[NUM_TOTAL_NODES];
